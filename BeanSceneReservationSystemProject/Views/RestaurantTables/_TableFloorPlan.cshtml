@@ -1,0 +1,54 @@
+@model TableManagementViewModel
+
+@{
+    var areaCount = Math.Max(Model.Areas.Count, 1);
+    var panelHeight = 190;
+    var svgHeight = areaCount * panelHeight + 24;
+    var colors = new[] { "#e6f0eb", "#fff3cd", "#e7f1ff", "#f8d7da", "#f1e7ff" };
+}
+
+<div class="border rounded-3 bg-light p-3 mb-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between gap-2 align-items-md-center mb-3">
+        <div>
+            <h2 class="h5 mb-1">Floor Plan</h2>
+            <div class="text-muted small">A live 2D layout generated from the current areas and tables.</div>
+        </div>
+        <span class="badge rounded-pill text-bg-primary">2D view</span>
+    </div>
+
+    @if (!Model.Areas.Any())
+    {
+        <div class="text-muted text-center border border-2 border-secondary-subtle rounded-3 p-4">Add an area to start building the floor plan.</div>
+    }
+    else
+    {
+        <svg class="w-100 border rounded-3 bg-white" viewBox="0 0 960 @svgHeight" role="img" aria-label="Restaurant table floor plan">
+            @for (var areaIndex = 0; areaIndex < Model.Areas.Count; areaIndex++)
+            {
+                var area = Model.Areas[areaIndex];
+                var tables = Model.Tables.Where(t => t.AreaId == area.AreaId).ToList();
+                var y = 12 + areaIndex * panelHeight;
+                var fill = colors[areaIndex % colors.Length];
+
+                <rect x="16" y="@y" width="928" height="166" rx="12" fill="@fill" stroke="#ced4da" />
+                @:<text x="36" y="@(y + 34)" fill="#212529" font-size="22" font-weight="700">@area.AreaName</text>
+                @:<text x="36" y="@(y + 58)" fill="#6c757d" font-size="14">@tables.Count table(s)</text>
+
+                @for (var tableIndex = 0; tableIndex < tables.Count; tableIndex++)
+                {
+                    var table = tables[tableIndex];
+                    var column = tableIndex % 10;
+                    var row = tableIndex / 10;
+                    var tableX = 190 + column * 72;
+                    var tableY = y + 26 + row * 62;
+                    var tableFill = table.IsAvailable ? "#ffffff" : "#f8d7da";
+                    var tableStroke = table.IsAvailable ? "#198754" : "#dc3545";
+
+                    <rect x="@tableX" y="@tableY" width="54" height="44" rx="8" fill="@tableFill" stroke="@tableStroke" stroke-width="2" />
+                    @:<text x="@(tableX + 27)" y="@(tableY + 21)" fill="#212529" text-anchor="middle" font-size="14" font-weight="700">@table.TableCode</text>
+                    @:<text x="@(tableX + 27)" y="@(tableY + 36)" fill="#6c757d" text-anchor="middle" font-size="11">@table.Capacity seats</text>
+                }
+            }
+        </svg>
+    }
+</div>

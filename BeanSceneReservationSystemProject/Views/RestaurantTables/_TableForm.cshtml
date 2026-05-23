@@ -1,0 +1,25 @@
+@model RestaurantTable
+
+<div class="row g-3">
+    <div class="col-md-6">
+        <label asp-for="TableCode" class="form-label"></label>
+        <input asp-for="TableCode" class="form-control" />
+        <span asp-validation-for="TableCode" class="text-danger"></span>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="AreaId" class="form-label">Area</label>
+        <select asp-for="AreaId" class="form-select" asp-items="ViewBag.AreaId"></select>
+        <span asp-validation-for="AreaId" class="text-danger"></span>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="Capacity" class="form-label"></label>
+        <input asp-for="Capacity" class="form-control" />
+        <span asp-validation-for="Capacity" class="text-danger"></span>
+    </div>
+    <div class="col-md-6 d-flex align-items-end">
+        <div class="form-check form-switch">
+            <input asp-for="IsAvailable" class="form-check-input" />
+            <label asp-for="IsAvailable" class="form-check-label">Available for reservations</label>
+        </div>
+    </div>
+</div>

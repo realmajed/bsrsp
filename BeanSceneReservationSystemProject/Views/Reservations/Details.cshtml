@@ -1,0 +1,18 @@
+﻿@model BeanSceneReservationSystemProject.Models.Reservation
+
+@{
+    ViewData["Title"] = "Reservation Details";
+}
+<h1>Reservation Details</h1>
+<div class="card">
+    <div class="card-body">
+        <h4>@Model.GuestFullName</h4>
+        <p>Email: @Model.Email</p>
+        <p>Phone: @Model.Phone</p>
+        <p>Sitting: @Model.Sitting?.SittingType</p>
+        <p>Start: @Model.StartTime</p>
+        <p>Guests: @Model.NumberOfGuests</p>
+        <p>Status: @Model.Status</p>
+    </div>
+</div>
+<a asp-action="Index" class="btn btn-secondary mt-3">Back</a>

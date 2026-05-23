@@ -1,0 +1,29 @@
+﻿@model IEnumerable<BeanSceneReservationSystemProject.Models.Sitting>
+@{
+    ViewData["Title"] = "Sittings";
+}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Sittings</h1>
+    <a asp-action="Create" class="btn btn-primary">Create Sitting</a>
+</div>
+<table class="table table-bordered table-striped">
+    <thead class="table-dark"><tr><th>Type</th><th>Start</th><th>End</th><th>Capacity</th><th>Booked</th><th>Closed</th><th></th></tr></thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.SittingType</td>
+                <td>@item.StartDateTime</td>
+                <td>@item.EndDateTime</td>
+                <td>@item.Capacity</td>
+                <td>@item.GuestsBooked</td>
+                <td>@item.IsClosed</td>
+                <td class="text-nowrap">
+                    <a asp-action="Details" asp-route-id="@item.SittingId" class="btn btn-sm btn-outline-secondary">Details</a>
+                    <a asp-action="Edit" asp-route-id="@item.SittingId" class="btn btn-sm btn-outline-primary">Edit</a>
+                    <a asp-action="Delete" asp-route-id="@item.SittingId" class="btn btn-sm btn-outline-danger">Delete</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

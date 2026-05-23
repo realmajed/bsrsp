@@ -1,0 +1,123 @@
+﻿@model BeanSceneReservationSystemProject.Models.Reservation
+
+@{
+    ViewData["Title"] = "Create";
+
+    var type = Context.Request.Query["type"].ToString();
+    var isMainPage = type == "mainPage";
+    var isMemberReservation = ViewData["IsMemberReservation"] as bool? == true;
+    var canManageReservationSource = ViewData["CanManageReservationSource"] as bool? == true;
+    var canAssignTables = ViewData["CanAssignTables"] as bool? == true;
+
+}
+
+<h1>Create</h1>
+
+<h4>Reservation</h4>
+<hr />
+<div class="row">
+    <div class="hero p-5 rounded-4 shadow-sm text-black">
+        <form asp-action="Create">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            
+            <div class="row g-3">
+                @* Members use their saved account details, guests/staff fill these in here. *@
+                @if (!isMemberReservation)
+                {
+                    <div class="col-md-6">
+                        <label asp-for="GuestFirstName" class="form-label"></label>
+                        <input asp-for="GuestFirstName" class="form-control" />
+                        <span asp-validation-for="GuestFirstName" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="GuestLastName" class="form-label"></label>
+                        <input asp-for="GuestLastName" class="form-control" />
+                        <span asp-validation-for="GuestLastName" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Email" class="form-label"></label>
+                        <input asp-for="Email" class="form-control" />
+                        <span asp-validation-for="Email" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Phone" class="form-label"></label>
+                        <input asp-for="Phone" class="form-control" />
+                        <span asp-validation-for="Phone" class="text-danger"></span>
+                    </div>
+                }
+                <div class="col-md-6">
+                    <label asp-for="SittingId" class="form-label"></label>
+                    <select asp-for="SittingId" class="form-select" asp-items="ViewBag.SittingId"></select>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="StartTime" class="form-label"></label>
+                    <input asp-for="StartTime" class="form-control" type="datetime-local" />
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="DurationMinutes" class="form-label"></label>
+                    <input asp-for="DurationMinutes" class="form-control" />
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="NumberOfGuests" class="form-label"></label>
+                    <input asp-for="NumberOfGuests" class="form-control" />
+                </div>
+                @* Staff can choose the source and tables, public bookings stay as online requests. *@
+                @if (canManageReservationSource)
+                {
+                    <div class="col-md-4">
+                        <label asp-for="Source" class="form-label"></label>
+                        <select asp-for="Source" class="form-select" asp-items="Html.GetEnumSelectList<ReservationSource>()"></select>
+                    </div>
+                }
+                else
+                {
+                    <input asp-for="Source" type="hidden" value="@ReservationSource.Online" />
+                }
+                @if (canAssignTables)
+                {
+                    <div class="col-md-12">
+                        @{
+                            ViewData["TablePickerFieldName"] = "selectedTableIds";
+                            ViewData["TablePickerReservationId"] = 0;
+                        }
+                        <partial name="_TablePicker" model="ViewBag.TablePickerTables" />
+                    </div>
+                }
+                <div class="col-md-12">
+                    <label asp-for="Notes" class="form-label"></label>
+                    <textarea asp-for="Notes" class="form-control"></textarea>
+                </div>
+            </div>
+            <div class="mt-3">
+                <button type="submit" class="btn btn-primary">Save</button>
+                @* Return users to the page they came from. *@
+                @if (isMainPage)
+                {
+                    <a asp-controller="Home" asp-action="Index" class="btn btn-secondary">Cancel</a>
+                }
+                else if (User.Identity?.IsAuthenticated == true)
+                {
+                    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+                }
+                else
+                {
+                    <a asp-controller="Home" asp-action="Index" class="btn btn-secondary">Cancel</a>
+                }
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    @if (isMainPage)
+    {
+        <div>
+            <a asp-action="Index">Back to List</a>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <partial name="_TableAvailabilityScripts" />
+}

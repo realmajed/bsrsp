@@ -1,0 +1,30 @@
+@model Area
+
+@{
+    ViewData["Title"] = "Edit Area";
+}
+
+<h1>Edit Area</h1>
+<hr />
+
+<div class="row">
+    <div class="col-lg-6">
+        <form asp-action="EditArea" asp-route-id="@Model.AreaId" method="post" class="border rounded-3 bg-light p-4">
+            <input type="hidden" asp-for="AreaId" />
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="mb-3">
+                <label asp-for="AreaName" class="form-label"></label>
+                <input asp-for="AreaName" class="form-control" />
+                <span asp-validation-for="AreaName" class="text-danger"></span>
+            </div>
+            <button type="submit" class="btn btn-primary">Save</button>
+            <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

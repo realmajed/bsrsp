@@ -1,0 +1,94 @@
+@model ReservationEditViewModel
+
+@{
+    ViewData["Title"] = "Edit Reservation";
+}
+
+<h1>Edit Reservation</h1>
+<hr />
+<div class="row">
+    <div class="hero p-5 rounded-4 shadow-sm text-black">
+        <form asp-action="Edit" asp-route-id="@Model.ReservationId" method="post" class="card p-4 shadow-sm">
+            <input type="hidden" asp-for="ReservationId" />
+            <input type="hidden" asp-for="RowVersion" />
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label asp-for="GuestFirstName" class="form-label"></label>
+                    <input asp-for="GuestFirstName" class="form-control" />
+                    <span asp-validation-for="GuestFirstName" class="text-danger"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="GuestLastName" class="form-label"></label>
+                    <input asp-for="GuestLastName" class="form-control" />
+                    <span asp-validation-for="GuestLastName" class="text-danger"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Email" class="form-label"></label>
+                    <input asp-for="Email" class="form-control" />
+                    <span asp-validation-for="Email" class="text-danger"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Phone" class="form-label"></label>
+                    <input asp-for="Phone" class="form-control" />
+                    <span asp-validation-for="Phone" class="text-danger"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="SittingId" class="form-label"></label>
+                    <select asp-for="SittingId" class="form-select" asp-items="ViewBag.SittingId"></select>
+                    <span asp-validation-for="SittingId" class="text-danger"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="StartTime" class="form-label"></label>
+                    <input asp-for="StartTime" class="form-control" type="datetime-local" />
+                    <span asp-validation-for="StartTime" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="DurationMinutes" class="form-label"></label>
+                    <input asp-for="DurationMinutes" class="form-control" />
+                    <span asp-validation-for="DurationMinutes" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="NumberOfGuests" class="form-label"></label>
+                    <input asp-for="NumberOfGuests" class="form-control" />
+                    <span asp-validation-for="NumberOfGuests" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Status" class="form-label"></label>
+                    <select asp-for="Status" class="form-select" asp-items="Html.GetEnumSelectList<ReservationStatus>()"></select>
+                    <span asp-validation-for="Status" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Source" class="form-label"></label>
+                    <select asp-for="Source" class="form-select" asp-items="Html.GetEnumSelectList<ReservationSource>()"></select>
+                    <span asp-validation-for="Source" class="text-danger"></span>
+                </div>
+                <div class="col-md-12">
+                    @{
+                        ViewData["TablePickerFieldName"] = nameof(Model.SelectedTableIds);
+                        ViewData["TablePickerReservationId"] = Model.ReservationId;
+                    }
+                    <partial name="_TablePicker" model="ViewBag.TablePickerTables" />
+                    <span asp-validation-for="SelectedTableIds" class="text-danger"></span>
+                </div>
+                <div class="col-md-12">
+                    <label asp-for="Notes" class="form-label"></label>
+                    <textarea asp-for="Notes" class="form-control"></textarea>
+                    <span asp-validation-for="Notes" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="mt-3">
+                <button type="submit" class="btn btn-primary">Update</button>
+                <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <partial name="_TableAvailabilityScripts" />
+}

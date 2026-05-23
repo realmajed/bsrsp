@@ -1,0 +1,22 @@
+@model RestaurantTable
+
+@{
+    ViewData["Title"] = "Delete Table";
+}
+
+<h1>Delete Table</h1>
+<hr />
+
+<div class="border rounded-3 bg-light p-4">
+    <p class="mb-3">Delete table <strong>@Model.TableCode</strong> in <strong>@Model.Area?.AreaName</strong>?</p>
+    <dl class="row mb-4">
+        <dt class="col-sm-3">Capacity</dt>
+        <dd class="col-sm-9">@Model.Capacity seats</dd>
+        <dt class="col-sm-3">Available</dt>
+        <dd class="col-sm-9">@Model.IsAvailable</dd>
+    </dl>
+    <form asp-action="Delete" asp-route-id="@Model.RestaurantTableId" method="post">
+        <button type="submit" class="btn btn-danger">Delete</button>
+        <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>

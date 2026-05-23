@@ -1,0 +1,38 @@
+@model BeanSceneReservationSystemProject.Models.Reservation
+
+@{
+    ViewData["Title"] = "Cancel Reservation";
+    var token = ViewData["CancellationToken"]?.ToString();
+    var canCancel = ViewData["CanCancel"] as bool? == true;
+}
+
+<h1>Cancel Reservation</h1>
+
+<div class="card">
+    <div class="card-body">
+        <h4>@Model.GuestFullName</h4>
+        <p>Email: @Model.Email</p>
+        <p>Phone: @Model.Phone</p>
+        <p>Sitting: @Model.Sitting?.SittingType</p>
+        <p>Start: @Model.StartTime.ToString("f")</p>
+        <p>Guests: @Model.NumberOfGuests</p>
+        <p>Status: @Model.Status</p>
+        <p>Tables: @string.Join(", ", Model.ReservationTables.Select(rt => rt.RestaurantTable?.TableCode))</p>
+    </div>
+</div>
+
+@if (canCancel)
+{
+    <form asp-action="CancelConfirmed" method="post" class="mt-3">
+        <input type="hidden" name="token" value="@token" />
+        <button type="submit" class="btn btn-danger">Cancel Reservation</button>
+        <a asp-controller="Home" asp-action="Index" class="btn btn-secondary">Keep Reservation</a>
+    </form>
+}
+else
+{
+    <div class="alert alert-warning mt-3">
+        This reservation can no longer be cancelled online.
+    </div>
+    <a asp-controller="Home" asp-action="Index" class="btn btn-secondary">Back</a>
+}

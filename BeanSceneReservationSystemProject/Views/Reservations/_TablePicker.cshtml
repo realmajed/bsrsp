@@ -1,0 +1,68 @@
+@model IEnumerable<RestaurantTable>
+
+@{
+    var fieldName = ViewData["TablePickerFieldName"] as string ?? "selectedTableIds";
+    var selectedTableIds = ViewData["SelectedTableIdSet"] as ISet<int> ?? new HashSet<int>();
+    var tableGroups = Model
+        .GroupBy(t => t.Area?.AreaName ?? "Unassigned")
+        .OrderBy(g => g.Key)
+        .ToList();
+    var selectedCount = Model.Count(t => selectedTableIds.Contains(t.RestaurantTableId));
+    var reservationId = ViewData["TablePickerReservationId"] as int? ?? 0;
+}
+
+<div class="border rounded-3 bg-light p-3"
+     data-table-picker
+     data-availability-url="@Url.Action("TableAvailability", "Reservations")"
+     data-reservation-id="@reservationId">
+    <div class="d-flex flex-column flex-sm-row align-items-sm-start justify-content-between gap-2 mb-3">
+        <div>
+            <div class="fw-bold text-dark">Assign Tables</div>
+            <div class="text-muted small" data-table-picker-message>Choose one or more tables for this reservation.</div>
+        </div>
+        <span class="badge rounded-pill text-bg-success align-self-start" data-table-picker-count>@selectedCount selected</span>
+    </div>
+    <div class="alert alert-warning py-2 mb-3 d-none" role="alert" data-table-selection-warning></div>
+
+    @if (!tableGroups.Any())
+    {
+        <div class="border border-2 border-secondary-subtle border-dashed rounded-3 text-muted p-3 text-center">
+            No tables are available to assign.
+        </div>
+    }
+    else
+    {
+        <div class="d-grid gap-3">
+            @foreach (var areaGroup in tableGroups)
+            {
+                <section aria-label="@areaGroup.Key tables">
+                    <div class="fw-semibold text-uppercase small text-secondary mb-2">@areaGroup.Key</div>
+                    <div class="row row-cols-2 row-cols-sm-3 row-cols-lg-4 g-2">
+                        @foreach (var table in areaGroup)
+                        {
+                            var inputId = $"{fieldName}_{table.RestaurantTableId}".Replace(".", "_");
+                            var isSelected = selectedTableIds.Contains(table.RestaurantTableId);
+
+                            <div class="col">
+                                <input class="btn-check"
+                                       type="checkbox"
+                                       id="@inputId"
+                                       name="@fieldName"
+                                       value="@table.RestaurantTableId"
+                                       data-capacity="@table.Capacity"
+                                       data-area="@areaGroup.Key"
+                                       checked="@isSelected"
+                                       autocomplete="off" />
+                                <label class="btn btn-outline-success w-100 h-100 text-start p-3" for="@inputId">
+                                    <span class="d-block fs-5 fw-bold lh-1">@table.TableCode</span>
+                                    <span class="d-block small mt-2 text-reset opacity-75">@table.Capacity seats</span>
+                                    <span class="d-block small mt-2 visually-hidden" data-table-status data-table-id="@table.RestaurantTableId"></span>
+                                </label>
+                            </div>
+                        }
+                    </div>
+                </section>
+            }
+        </div>
+    }
+</div>

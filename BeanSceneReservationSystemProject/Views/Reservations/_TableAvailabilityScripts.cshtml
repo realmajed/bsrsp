@@ -1,0 +1,118 @@
+<script>
+    (() => {
+        const picker = document.querySelector("[data-table-picker]");
+        if (!picker) {
+            return;
+        }
+
+        const form = picker.closest("form");
+        const count = picker.querySelector("[data-table-picker-count]");
+        const message = picker.querySelector("[data-table-picker-message]");
+        const selectionWarning = picker.querySelector("[data-table-selection-warning]");
+        const inputs = Array.from(picker.querySelectorAll(".btn-check"));
+        const field = (name) => form?.querySelector(`[name="${name}"]`);
+        const controls = [
+            field("SittingId"),
+            field("StartTime"),
+            field("DurationMinutes"),
+            field("NumberOfGuests")
+        ].filter(Boolean);
+
+        const setLabelState = (input, unavailable, reason) => {
+            const label = picker.querySelector(`label[for="${input.id}"]`);
+            const status = label?.querySelector("[data-table-status]");
+            if (!label) {
+                return;
+            }
+
+            label.classList.toggle("btn-outline-success", !unavailable);
+            label.classList.toggle("btn-outline-danger", unavailable);
+            label.title = reason || "Available";
+
+            if (status) {
+                status.classList.toggle("visually-hidden", !unavailable);
+                status.textContent = reason || "";
+            }
+        };
+
+        const updateCount = () => {
+            const selectedInputs = inputs.filter((input) => input.checked);
+            const selected = selectedInputs.length;
+            if (count) {
+                count.textContent = `${selected} selected`;
+            }
+
+            if (!selectionWarning) {
+                return;
+            }
+
+            const guests = Number(field("NumberOfGuests")?.value || 0);
+            const selectedCapacity = selectedInputs.reduce((total, input) => {
+                return total + Number(input.dataset.capacity || 0);
+            }, 0);
+            const selectedAreas = new Set(selectedInputs.map((input) => input.dataset.area).filter(Boolean));
+            const warnings = [];
+
+            if (guests > 0 && selected > 1 && selectedCapacity > guests * 2) {
+                warnings.push(`Selected tables seat ${selectedCapacity} guests for a booking of ${guests}. You can keep this, but it may use more tables than needed.`);
+            }
+
+            if (guests > 0 && selectedCapacity < guests) {
+                warnings.push(`Selected tables seat ${selectedCapacity} guests, but the booking is for ${guests}.`);
+            }
+
+            if (selectedAreas.size > 1) {
+                warnings.push(`Selected tables are spread across ${selectedAreas.size} areas. You can keep this, but staff may need to seat the party separately.`);
+            }
+
+            if (warnings.length > 0) {
+                selectionWarning.innerHTML = warnings.map((warning) => `<div>${warning}</div>`).join("");
+                selectionWarning.classList.remove("d-none");
+            } else {
+                selectionWarning.textContent = "";
+                selectionWarning.classList.add("d-none");
+            }
+        };
+
+        const refreshAvailability = async () => {
+            updateCount();
+
+            if (!picker.dataset.availabilityUrl || !controls.every((control) => control.value)) {
+                return;
+            }
+
+            const params = new URLSearchParams({
+                reservationId: picker.dataset.reservationId || "0",
+                sittingId: field("SittingId").value,
+                startTime: field("StartTime").value,
+                durationMinutes: field("DurationMinutes").value,
+                numberOfGuests: field("NumberOfGuests").value
+            });
+
+            const response = await fetch(`${picker.dataset.availabilityUrl}?${params}`, {
+                headers: { "Accept": "application/json" }
+            });
+
+            if (!response.ok) {
+                return;
+            }
+
+            const availability = await response.json();
+            const tables = new Map(availability.tables.map((table) => [String(table.tableId), table]));
+
+            inputs.forEach((input) => {
+                const table = tables.get(input.value);
+                setLabelState(input, table?.unavailable === true, table?.reason);
+            });
+
+            if (message) {
+                message.textContent = availability.message || "Green tables are available for this reservation time.";
+            }
+        };
+
+        inputs.forEach((input) => input.addEventListener("change", updateCount));
+        controls.forEach((control) => control.addEventListener("change", refreshAvailability));
+        controls.forEach((control) => control.addEventListener("input", refreshAvailability));
+        refreshAvailability();
+    })();
+</script>

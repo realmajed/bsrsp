@@ -1,0 +1,63 @@
+﻿@model IEnumerable<BeanSceneReservationSystemProject.ViewModels.UserRoleViewModel>
+@{
+    ViewData["Title"] = "User Role Management";
+}
+
+<h1>User Role Management</h1>
+<p>Managers can assign users to Manager, Staff or Member roles.</p>
+
+@if (TempData["Message"] != null)
+{
+    <div class="alert alert-success">@TempData["Message"]</div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+}
+
+<table class="table table-striped table-bordered">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Current Role</th>
+            <th>New Role</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var user in Model)
+        {
+            <tr>
+                <td>
+                    <div class="d-flex align-items-center gap-2">
+                        @if (!string.IsNullOrWhiteSpace(user.ProfilePicturePath))
+                        {
+                            <img src="@user.ProfilePicturePath" alt="@user.FullName profile picture" class="rounded-circle border" style="width: 40px; height: 40px; object-fit: cover;" />
+                        }
+                        else
+                        {
+                            <div class="rounded-circle border bg-light d-flex align-items-center justify-content-center text-muted" style="width: 40px; height: 40px; font-size: 0.75rem;">
+                                @user.FullName.FirstOrDefault()
+                            </div>
+                        }
+                        <span>@user.FullName</span>
+                    </div>
+                </td>
+                <td>@user.Email</td>
+                <td>@user.CurrentRole</td>
+                <td>
+                    <form asp-action="UpdateRole" method="post" class="d-flex gap-2">
+                        <input type="hidden" name="userId" value="@user.UserId" />
+                        <select name="selectedRole" class="form-select">
+                            @foreach (var role in user.AvailableRoles)
+                            {
+                                <option value="@role" selected="@(role == user.SelectedRole)">@role</option>
+                            }
+                        </select>
+                        <button type="submit" class="btn btn-primary">Update</button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

@@ -1,0 +1,22 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div class="hero p-5 rounded-4 shadow-sm text-black">
+    <h1>Bean Scene Reservation System</h1>
+    <p class="lead">Manage the restaurant reservations, sittings, table allocations and guest details online.</p>
+    <a class="btn btn-light btn-lg" asp-controller="Reservations" asp-action="Create" asp-route-type="mainPage">Create Reservation</a>
+</div>
+
+<div class="row mt-4 g-3">
+    <div class="col-md-4"><div class="card h-100"><div class="card-body"><h5>Reservations</h5><p>Create, update and track bookings.</p></div></div></div>
+    <div class="col-md-4"><div class="card h-100"><div class="card-body"><h5>Sittings</h5><p>Manage breakfast, lunch, dinner and events.</p></div></div></div>
+    <div class="col-md-4"><div class="card h-100"><div class="card-body"><h5>Tables</h5><p>Manage Main, Outside and Balcony tables.</p></div></div></div>
+</div>
+<div class="mt-4 card">
+    <div class="card-body">
+        <h5>Help File Upload</h5>
+        <p>This demonstrates a select-file GUI component for help files or policy documents.</p>
+        <input type="file" class="form-control" />
+    </div>
+</div>
