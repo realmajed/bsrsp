@@ -58,6 +58,12 @@ namespace BeanSceneReservationSystemProject.Models
                 .HasForeignKey(h => h.ReservationId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            modelBuilder.Entity<Reservation>()
+                .HasOne(r => r.CreatedByUser)
+                .WithMany(u => u.CreatedReservations)
+                .HasForeignKey(r => r.CreatedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
 
             // Default restaurant areas and tables
             modelBuilder.Entity<Area>().HasData(

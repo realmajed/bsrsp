@@ -85,7 +85,7 @@ namespace BeanSceneReservationSystemProject.Controllers
 
             ViewData["Search"] = search;
             ViewData["Status"] = status?.ToString();
-            ViewData["SittingIdFilter"] = BuildSittingSelectList(sittingId);
+            ViewData["SittingIdFilter"] = BuildSittingSelectList(sittingId, includeExpired: true);
             ViewData["Date"] = date?.ToString("yyyy-MM-dd");
             ViewData["IsMemberReservationsList"] = currentUser?.Role == UserRole.Member;
 
@@ -310,6 +310,11 @@ namespace BeanSceneReservationSystemProject.Controllers
                     if (oldStatus != viewModel.Status && !CanChangeStatus(oldStatus, viewModel.Status))
                     {
                         ModelState.AddModelError(nameof(viewModel.Status), $"Reservation status cannot be changed from {oldStatus} to {viewModel.Status}.");
+                    }
+                    if (viewModel.Status == ReservationStatus.Seated && (DateTime.Now < reservation.StartTime || DateTime.Now > reservation.EndTime))
+                    {
+                        // Cant be seated if outside reservation time.
+                        ModelState.AddModelError(nameof(viewModel.Status), $"{reservation.GuestFullName} cannot be {viewModel.Status} due to it being before or after their reservation. Please manually update the booking start time.");
                     }
 
                     if (!ModelState.IsValid)
@@ -694,6 +699,7 @@ namespace BeanSceneReservationSystemProject.Controllers
         {
             return _context.Reservations
                 .Include(r => r.Sitting)
+                .Include(r => r.CreatedByUser)
                 .Include(r => r.Member)
                 .ThenInclude(m => m!.User)
                 .Include(r => r.ReservationTables)
@@ -739,6 +745,16 @@ namespace BeanSceneReservationSystemProject.Controllers
                         reservation.Member.User.ProfilePicturePath,
                         reservation.Member.User.FullName
                     }
+                },
+                reservation.CreatedByUserId,
+                CreatedByUser = reservation.CreatedByUser == null ? null : new
+                {
+                    reservation.CreatedByUser.Id,
+                    reservation.CreatedByUser.FirstName,
+                    reservation.CreatedByUser.LastName,
+                    reservation.CreatedByUser.Email,
+                    reservation.CreatedByUser.Role,
+                    reservation.CreatedByUser.FullName
                 },
                 reservation.StartTime,
                 reservation.DurationMinutes,
@@ -798,7 +814,7 @@ namespace BeanSceneReservationSystemProject.Controllers
                 .ToList();
             tables = TableOrdering.OrderTables(tables);
 
-            ViewData["SittingId"] = BuildSittingSelectList();
+            ViewData["SittingId"] = BuildSittingSelectList(selectedSittingId: null, includeExpired: false);
             ViewData["TablePickerTables"] = tables;
             ViewData["SelectedTableIdSet"] = selectedIds;
             ViewData["SelectedTableIds"] = new MultiSelectList(
@@ -808,18 +824,37 @@ namespace BeanSceneReservationSystemProject.Controllers
                 selectedIds);
         }
 
-        private List<SelectListItem> BuildSittingSelectList(int? selectedSittingId = null)
+        private List<SelectListItem> BuildSittingSelectList(int? selectedSittingId = null, bool includeExpired = false)
         {
+            var now = DateTime.Now;
+
             return _context.Sittings
                 .OrderBy(s => s.StartDateTime)
                 .ToList()
+                .Where(s => includeExpired || s.EndDateTime >= now || (selectedSittingId.HasValue && s.SittingId == selectedSittingId.Value))
                 .Select(s => new SelectListItem
                 {
                     Value = s.SittingId.ToString(),
-                    Text = $"{s.SittingType} {s.StartDateTime:dd-MM-yyyy h:mm tt} - {s.EndDateTime:h:mm tt}" + (s.IsClosed ? " (Closed)" : string.Empty),
+                    Text = FormatSittingOptionText(s) + (s.IsClosed ? " (Closed)" : string.Empty),
                     Selected = selectedSittingId.HasValue && s.SittingId == selectedSittingId.Value
                 })
                 .ToList();
+        }
+
+        private static string FormatSittingOptionText(Sitting sitting)
+        {
+            var timeRange = $"{sitting.StartDateTime:h:mm tt} - {sitting.EndDateTime:h:mm tt}";
+
+            if (sitting.StartDateTime.Date == sitting.EndDateTime.Date)
+            {
+                return $"{sitting.SittingType} {sitting.StartDateTime:dd MMM yyyy}, {timeRange}";
+            }
+
+            var dateRange = sitting.StartDateTime.Year == sitting.EndDateTime.Year
+                ? $"{sitting.StartDateTime:dd MMM} - {sitting.EndDateTime:dd MMM yyyy}"
+                : $"{sitting.StartDateTime:dd MMM yyyy} - {sitting.EndDateTime:dd MMM yyyy}";
+
+            return $"{sitting.SittingType} {dateRange}, {timeRange}";
         }
 
         private void UpdateReservationTables(Reservation reservation, List<int>? selectedTableIds)
@@ -875,7 +910,7 @@ namespace BeanSceneReservationSystemProject.Controllers
                 return "Sitting closed";
             }
 
-            if (startTime < sitting.StartDateTime || startTime >= sitting.EndDateTime || endTime > sitting.EndDateTime)
+            if (!sitting.ContainsReservation(startTime, endTime))
             {
                 return "Outside sitting time";
             }

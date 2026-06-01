@@ -88,6 +88,9 @@ namespace BeanSceneReservationSystemProject.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ReservationId"));
 
+                    b.Property<string>("CreatedByUserId")
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<int>("DurationMinutes")
                         .HasColumnType("int");
 
@@ -145,6 +148,8 @@ namespace BeanSceneReservationSystemProject.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("ReservationId");
+
+                    b.HasIndex("CreatedByUserId");
 
                     b.HasIndex("MemberId");
 
@@ -776,6 +781,11 @@ namespace BeanSceneReservationSystemProject.Migrations
 
             modelBuilder.Entity("BeanSceneReservationSystemProject.Models.Reservation", b =>
                 {
+                    b.HasOne("BeanSceneReservationSystemProject.Models.User", "CreatedByUser")
+                        .WithMany("CreatedReservations")
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("BeanSceneReservationSystemProject.Models.Member", "Member")
                         .WithMany("Reservations")
                         .HasForeignKey("MemberId");
@@ -785,6 +795,8 @@ namespace BeanSceneReservationSystemProject.Migrations
                         .HasForeignKey("SittingId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("CreatedByUser");
 
                     b.Navigation("Member");
 
@@ -918,6 +930,8 @@ namespace BeanSceneReservationSystemProject.Migrations
 
             modelBuilder.Entity("BeanSceneReservationSystemProject.Models.User", b =>
                 {
+                    b.Navigation("CreatedReservations");
+
                     b.Navigation("MemberProfile");
 
                     b.Navigation("StatusChanges");

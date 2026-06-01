@@ -25,6 +25,7 @@ namespace BeanSceneReservationSystemProject.Models
 
         public Member? MemberProfile { get; set; }
         public ICollection<ReservationStatusHistory> StatusChanges { get; set; } = new List<ReservationStatusHistory>();
+        public ICollection<Reservation> CreatedReservations { get; set; } = new List<Reservation>();
 
         public string FullName => $"{FirstName} {LastName}";
     }

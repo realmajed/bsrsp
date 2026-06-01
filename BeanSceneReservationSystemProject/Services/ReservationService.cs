@@ -43,6 +43,7 @@ namespace BeanSceneReservationSystemProject.Services
             {
                 // New reservations always start pending until staff confirm or cancel them.
                 reservation.Status = ReservationStatus.Pending;
+                reservation.CreatedByUserId = createdByUserId;
                 _context.Reservations.Add(reservation);
                 await _context.SaveChangesAsync();
 
@@ -100,6 +101,12 @@ namespace BeanSceneReservationSystemProject.Services
             if (newStatus == oldStatus)
             {
                 // Nothing to save or email if the status is already there.
+                return false;
+            }
+
+            if (newStatus == ReservationStatus.Seated && (DateTime.Now < reservation.StartTime || DateTime.Now > reservation.EndTime))
+            {
+                // Cant be seated if outside reservation time.
                 return false;
             }
 
@@ -171,6 +178,11 @@ namespace BeanSceneReservationSystemProject.Services
             if (reservation.EndTime > sitting.EndDateTime)
             {
                 errors.Add("The reservation duration must end before the selected sitting ends.");
+            }
+
+            if (!sitting.ContainsReservation(reservation.StartTime, reservation.EndTime))
+            {
+                errors.Add($"The reservation must fit within the sitting's daily time window ({sitting.StartDateTime:h:mm tt} - {sitting.EndDateTime:h:mm tt}).");
             }
 
             if (reservation.NumberOfGuests > 0)
@@ -315,41 +327,145 @@ namespace BeanSceneReservationSystemProject.Services
 
             return $@"
 <!doctype html>
-<html>
-<body style=""margin:0;padding:0;background:#f4f1ec;font-family:Arial,Helvetica,sans-serif;color:#2d2926;"">
-  <table role=""presentation"" width=""100%"" cellspacing=""0"" cellpadding=""0"" style=""background:#f4f1ec;padding:28px 12px;"">
+<html lang=""en"">
+<head>
+  <meta charset=""UTF-8"">
+  <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
+  <meta name=""color-scheme"" content=""light"">
+  <meta name=""supported-color-schemes"" content=""light"">
+  <title>{Html(title)} - Bean Scene</title>
+  <!--[if mso]>
+  <style type=""text/css"">
+    table {{ border-collapse: collapse; }}
+    td {{ font-family: Arial, sans-serif; }}
+  </style>
+  <![endif]-->
+</head>
+<body style=""margin: 0; padding: 0; background-color: #E0E0E0; font-family: 'Open Sans', Arial, Helvetica, sans-serif; color: #083944; -webkit-font-smoothing: antialiased;"">
+  <!-- Preheader text (hidden) -->
+  <div style=""display: none; max-height: 0; overflow: hidden;"">
+    {Html(message)}
+    &nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;
+  </div>
+  
+  <!-- Email wrapper -->
+  <table role=""presentation"" width=""100%"" cellspacing=""0"" cellpadding=""0"" border=""0"" style=""background-color: #E0E0E0; padding: 32px 16px;"">
     <tr>
       <td align=""center"">
-        <table role=""presentation"" width=""100%"" cellspacing=""0"" cellpadding=""0"" style=""max-width:640px;background:#ffffff;border:1px solid #ded7cf;border-radius:8px;overflow:hidden;"">
+        <!-- Main container -->
+        <table role=""presentation"" width=""100%"" cellspacing=""0"" cellpadding=""0"" border=""0"" style=""max-width: 600px; background-color: #FFFFFF; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(8, 57, 68, 0.08);"">
+          
+          <!-- Header -->
           <tr>
-            <td style=""background:#2f4f4f;padding:22px 28px;color:#ffffff;"">
-              <div style=""font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#d7e5df;"">Bean Scene</div>
-              <div style=""font-size:26px;font-weight:700;margin-top:6px;"">{Html(title)}</div>
+            <td style=""background-color: #083944; padding: 28px 32px; text-align: center;"">
+              <!-- Logo placeholder - replace with actual logo -->
+              <div style=""font-family: 'Tangerine', Georgia, serif; font-size: 36px; color: #FFFFFF; margin-bottom: 8px;"">Bean Scene</div>
+              <div style=""font-size: 24px; font-weight: 300; color: #4AA1B5; letter-spacing: 0.5px;"">{Html(title)}</div>
             </td>
           </tr>
+          
+          <!-- Status Badge & Message -->
           <tr>
-            <td style=""padding:26px 28px 8px;"">
-              <span style=""display:inline-block;background:#e6f0eb;color:#244640;border:1px solid #c8ded4;border-radius:999px;padding:6px 12px;font-size:13px;font-weight:700;"">{Html(badgeText)}</span>
-              <p style=""font-size:16px;line-height:1.55;margin:18px 0 0;"">{Html(message)}</p>
+            <td style=""padding: 28px 32px 16px;"">
+              <!-- Status Badge -->
+              <table role=""presentation"" cellspacing=""0"" cellpadding=""0"" border=""0"">
+                <tr>
+                  <td style=""background-color: #F8E8B5; color: #083944; border: 1px solid #EBC136; border-radius: 24px; padding: 8px 16px; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;"">
+                    {Html(badgeText)}
+                  </td>
+                </tr>
+              </table>
+              <!-- Message -->
+              <p style=""font-size: 16px; line-height: 1.6; color: #083944; margin: 20px 0 0;"">{Html(message)}</p>
             </td>
           </tr>
+          
+          <!-- Reservation Details Card -->
           <tr>
-            <td style=""padding:16px 28px 28px;"">
-              <table role=""presentation"" width=""100%"" cellspacing=""0"" cellpadding=""0"" style=""border-collapse:collapse;border:1px solid #e5ded6;border-radius:6px;overflow:hidden;"">
-                {BuildDetailRow("Reservation number", details.ReservationId.ToString())}
-                {BuildDetailRow("Guest", details.GuestName)}
-                {BuildDetailRow("Date", details.Date)}
-                {BuildDetailRow("Time", details.Time)}
-                {BuildDetailRow("Duration", details.Duration)}
-                {BuildDetailRow("Guests", details.NumberOfGuests.ToString())}
-                {BuildDetailRow("Sitting", details.Sitting)}
-                {BuildDetailRow("Assigned table(s)", details.AssignedTables)}
+            <td style=""padding: 0 32px 28px;"">
+              <table role=""presentation"" width=""100%"" cellspacing=""0"" cellpadding=""0"" border=""0"" style=""background-color: #FFFFFF; border: 1px solid #E0E0E0; border-radius: 8px; overflow: hidden;"">
+                <!-- Card Header -->
+                <tr>
+                  <td colspan=""2"" style=""background-color: #2F6672; padding: 14px 20px;"">
+                    <span style=""font-size: 14px; font-weight: 600; color: #FFFFFF; text-transform: uppercase; letter-spacing: 0.5px;"">Reservation Details</span>
+                  </td>
+                </tr>
+                <!-- Reservation Number -->
+                <tr>
+                  <td style=""padding: 14px 20px; border-bottom: 1px solid #E0E0E0; width: 40%; font-size: 14px; color: #2F6672; font-weight: 600;"">Reservation #</td>
+                  <td style=""padding: 14px 20px; border-bottom: 1px solid #E0E0E0; font-size: 14px; color: #083944;"">{details.ReservationId}</td>
+                </tr>
+                <!-- Guest -->
+                <tr>
+                  <td style=""padding: 14px 20px; border-bottom: 1px solid #E0E0E0; font-size: 14px; color: #2F6672; font-weight: 600;"">Guest</td>
+                  <td style=""padding: 14px 20px; border-bottom: 1px solid #E0E0E0; font-size: 14px; color: #083944;"">{Html(details.GuestName)}</td>
+                </tr>
+                <!-- Date -->
+                <tr>
+                  <td style=""padding: 14px 20px; border-bottom: 1px solid #E0E0E0; font-size: 14px; color: #2F6672; font-weight: 600;"">Date</td>
+                  <td style=""padding: 14px 20px; border-bottom: 1px solid #E0E0E0; font-size: 14px; color: #083944;"">{Html(details.Date)}</td>
+                </tr>
+                <!-- Time -->
+                <tr>
+                  <td style=""padding: 14px 20px; border-bottom: 1px solid #E0E0E0; font-size: 14px; color: #2F6672; font-weight: 600;"">Time</td>
+                  <td style=""padding: 14px 20px; border-bottom: 1px solid #E0E0E0; font-size: 14px; color: #083944;"">{Html(details.Time)}</td>
+                </tr>
+                <!-- Duration -->
+                <tr>
+                  <td style=""padding: 14px 20px; border-bottom: 1px solid #E0E0E0; font-size: 14px; color: #2F6672; font-weight: 600;"">Duration</td>
+                  <td style=""padding: 14px 20px; border-bottom: 1px solid #E0E0E0; font-size: 14px; color: #083944;"">{Html(details.Duration)}</td>
+                </tr>
+                <!-- Number of Guests -->
+                <tr>
+                  <td style=""padding: 14px 20px; border-bottom: 1px solid #E0E0E0; font-size: 14px; color: #2F6672; font-weight: 600;"">Guests</td>
+                  <td style=""padding: 14px 20px; border-bottom: 1px solid #E0E0E0; font-size: 14px; color: #083944;"">{details.NumberOfGuests}</td>
+                </tr>
+                <!-- Sitting -->
+                <tr>
+                  <td style=""padding: 14px 20px; border-bottom: 1px solid #E0E0E0; font-size: 14px; color: #2F6672; font-weight: 600;"">Sitting</td>
+                  <td style=""padding: 14px 20px; border-bottom: 1px solid #E0E0E0; font-size: 14px; color: #083944;"">{Html(details.Sitting)}</td>
+                </tr>
+                <!-- Assigned Tables -->
+                <tr>
+                  <td style=""padding: 14px 20px; border-bottom: 1px solid #E0E0E0; font-size: 14px; color: #2F6672; font-weight: 600;"">Table(s)</td>
+                  <td style=""padding: 14px 20px; border-bottom: 1px solid #E0E0E0; font-size: 14px; color: #083944;"">{Html(details.AssignedTables)}</td>
+                </tr>
+                <!-- Notes (optional - include row or empty) -->
                 {notesRow}
               </table>
-              {cancelButton}
-              <p style=""font-size:13px;line-height:1.5;color:#6c625c;margin:18px 0 0;"">If you need to change your reservation, please contact store staff.</p>
             </td>
           </tr>
+          
+          <!-- Cancel Button (optional) -->
+          {cancelButton}
+          
+          <!-- Help Text -->
+          <tr>
+            <td style=""padding: 0 32px 28px;"">
+              <p style=""font-size: 14px; line-height: 1.6; color: #2F6672; margin: 0;"">
+                Need to make changes? Please contact our staff at <a href=""mailto:reservations@beanscene.com"" style=""color: #4AA1B5; text-decoration: underline;"">reservations@beanscene.com</a> or call us directly.
+              </p>
+            </td>
+          </tr>
+          
+          <!-- Divider -->
+          <tr>
+            <td style=""padding: 0 32px;"">
+              <div style=""border-top: 1px solid #E0E0E0;""></div>
+            </td>
+          </tr>
+          
+          <!-- Footer -->
+          <tr>
+            <td style=""padding: 24px 32px; text-align: center;"">
+              <p style=""font-size: 13px; color: #2F6672; margin: 0 0 8px;"">Bean Scene Coffee House</p>
+              <p style=""font-size: 12px; color: #2F6672; margin: 0; opacity: 0.7;"">
+                123 Coffee Lane, Melbourne VIC 3000<br>
+                <a href=""tel:+61312345678"" style=""color: #4AA1B5; text-decoration: none;"">+61 3 1234 5678</a>
+              </p>
+            </td>
+          </tr>
+          
         </table>
       </td>
     </tr>
@@ -465,9 +581,17 @@ namespace BeanSceneReservationSystemProject.Services
             }
 
             return $@"
-              <div style=""text-align:center;margin:24px 0 4px;"">
-                <a href=""{Html(cancellationUrl)}"" style=""display:inline-block;background:#8f2f2f;color:#ffffff;text-decoration:none;border-radius:6px;padding:12px 18px;font-size:14px;font-weight:700;"">Cancel reservation</a>
-              </div>";
+              <tr>
+    <td style=""padding: 0 32px 20px;"">
+      <table role=""presentation"" cellspacing=""0"" cellpadding=""0"" border=""0"">
+        <tr>
+          <td style=""background-color: #4AA1B5; border-radius: 6px;"">
+            <a href=""{Html(cancellationUrl)}"" style=""display: inline-block; padding: 14px 28px; font-size: 14px; font-weight: 600; color: #FFFFFF; text-decoration: none;"">Cancel Reservation</a>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>";
         }
 
         private static string Html(string value)

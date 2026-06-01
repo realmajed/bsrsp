@@ -1,0 +1,198 @@
+@model ReportsViewModel
+@{
+    ViewData["Title"] = "Reports";
+}
+
+<div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
+    <div>
+        <h1 class="mb-1">Reports</h1>
+        <div class="text-muted">Owner and manager view of upcoming demand, booking channels, and table usage.</div>
+    </div>
+    <span class="badge rounded-pill text-bg-secondary align-self-start">Updated @DateTime.Now.ToString("dd MMM yyyy h:mm tt")</span>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md">
+        <div class="border rounded-3 p-3 h-100 bg-light">
+            <div class="text-muted small text-uppercase fw-semibold">Future reservations</div>
+            <div class="display-6 fw-bold">@Model.FutureReservationCount</div>
+            <div class="text-muted small">@Model.FutureGuestCount future guests</div>
+        </div>
+    </div>
+    <div class="col-md">
+        <div class="border rounded-3 p-3 h-100 bg-light">
+            <div class="text-muted small text-uppercase fw-semibold">Most active day</div>
+            <div class="h3 fw-bold mb-1">@Model.MostActiveDayName</div>
+            <div class="text-muted small">@Model.MostActiveDayCount reservations</div>
+        </div>
+    </div>
+    <div class="col-md">
+        <div class="border rounded-3 p-3 h-100 bg-light">
+            <div class="text-muted small text-uppercase fw-semibold">Manual staff</div>
+            <div class="display-6 fw-bold">@Model.ManualStaffBookings</div>
+            <div class="text-muted small">Created by owner, manager, or staff</div>
+        </div>
+    </div>
+    <div class="col-md">
+        <div class="border rounded-3 p-3 h-100 bg-light">
+            <div class="text-muted small text-uppercase fw-semibold">Online bookings</div>
+            <div class="display-6 fw-bold">@(Model.MemberBookings + Model.GuestOnlineBookings)</div>
+            <div class="text-muted small">@Model.MemberBookings member, @Model.GuestOnlineBookings guest</div>
+        </div>
+    </div>
+    <div class="col-md">
+        <div class="border rounded-3 p-3 h-100 bg-light">
+            <div class="text-muted small text-uppercase fw-semibold">Avg confirmation</div>
+            <div class="display-6 fw-bold">@Model.AveragePendingToConfirmedTime</div>
+            <div class="text-muted small">Pending to confirmed</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <section class="col-xl-4">
+        <div class="border rounded-3 p-3 h-100">
+            <h2 class="h5 mb-3">Most Active Day</h2>
+            <div class="d-grid gap-3">
+                @foreach (var row in Model.ActiveDayRows)
+                {
+                    <div>
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span class="fw-semibold">@row.Label</span>
+                            <span class="text-muted">@row.Count</span>
+                        </div>
+                        <div class="progress" style="height: 18px;">
+                            <div class="progress-bar" role="progressbar" style="width: @row.Percentage%;" aria-valuenow="@row.Percentage" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+    <section class="col-xl-4">
+        <div class="border rounded-3 p-3 h-100">
+            <h2 class="h5 mb-3">Staff vs Member/Guest Bookings</h2>
+            <div class="d-grid gap-3">
+                @foreach (var row in Model.BookingChannelRows)
+                {
+                    <div>
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span class="fw-semibold">@row.Label</span>
+                            <span class="text-muted">@row.Count</span>
+                        </div>
+                        <div class="progress" style="height: 18px;">
+                            <div class="progress-bar bg-success" role="progressbar" style="width: @row.Percentage%;" aria-valuenow="@row.Percentage" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+    <section class="col-xl-4">
+        <div class="border rounded-3 p-3 h-100">
+            <h2 class="h5 mb-3">Pending to Confirmed Time</h2>
+            <div class="d-grid gap-3">
+                @foreach (var row in Model.ConfirmationTimeRows)
+                {
+                    <div>
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span class="fw-semibold">@row.Label</span>
+                            <span class="text-muted">@row.Count</span>
+                        </div>
+                        <div class="progress" style="height: 18px;">
+                            <div class="progress-bar bg-info" role="progressbar" style="width: @row.Percentage%;" aria-valuenow="@row.Percentage" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+</div>
+
+<div class="row g-4">
+    <section class="col-xl-8">
+        <div class="border rounded-3 p-3 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="h5 mb-0">Future Reservations</h2>
+                <span class="badge text-black border">Next @Model.FutureReservations.Count shown</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Guest</th>
+                            <th>Guests</th>
+                            <th>Sitting</th>
+                            <th>Status</th>
+                            <th>Source</th>
+                            <th>Tables</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.FutureReservations.Any())
+                        {
+                            <tr>
+                                <td colspan="7" class="text-muted text-center py-4">No future reservations found.</td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var reservation in Model.FutureReservations)
+                            {
+                                <tr>
+                                    <td class="text-nowrap">@reservation.StartTime.ToString("dd MMM h:mm tt")</td>
+                                    <td>
+                                        <a asp-controller="Reservations" asp-action="Details" asp-route-id="@reservation.ReservationId">@reservation.GuestName</a>
+                                    </td>
+                                    <td>@reservation.NumberOfGuests</td>
+                                    <td>@reservation.Sitting</td>
+                                    <td><span class="badge text-bg-secondary">@reservation.Status</span></td>
+                                    <td>@reservation.Source</td>
+                                    <td>@reservation.Tables</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+    <section class="col-xl-4">
+        <div class="border rounded-3 p-3 h-100">
+            <h2 class="h5 mb-3">Most Seated Tables</h2>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle">
+                    <thead>
+                        <tr>
+                            <th>Table</th>
+                            <th>Area</th>
+                            <th>Seated</th>
+                            <th>Guests</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.MostSeatedTables.Any())
+                        {
+                            <tr>
+                                <td colspan="4" class="text-muted text-center py-4">No seated table data yet.</td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var table in Model.MostSeatedTables)
+                            {
+                                <tr>
+                                    <td class="fw-semibold">@table.TableCode</td>
+                                    <td>@table.AreaName</td>
+                                    <td>@table.SeatedCount</td>
+                                    <td>@table.GuestCount</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+</div>
